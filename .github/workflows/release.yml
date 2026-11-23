@@ -2,8 +2,8 @@ name: release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -13,23 +13,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    uses: platform-mesh/.github/.github/workflows/job-node-test.yml@33d3ee309a70b300c1775d78054cbb9215673b7b
-    secrets: inherit # zizmor: ignore[secrets-inherit]
-
-  create-version:
-    uses: platform-mesh/.github/.github/workflows/job-create-version.yml@33d3ee309a70b300c1775d78054cbb9215673b7b
-    secrets: inherit # zizmor: ignore[secrets-inherit]
+  version:
+    uses: platform-mesh/.github/.github/workflows/job-tag-version.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
     permissions:
-      contents: write # Needed to push the version tag and create the GitHub release
+      contents: read
+
+  build:
+    needs: [version]
+    uses: platform-mesh/.github/.github/workflows/job-node-test.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
+    secrets: inherit # zizmor: ignore[secrets-inherit]
 
   publish:
-    needs: [create-version, build]
-    uses: platform-mesh/.github/.github/workflows/job-node-publish.yml@33d3ee309a70b300c1775d78054cbb9215673b7b
+    needs: [version, build]
+    uses: platform-mesh/.github/.github/workflows/job-node-publish.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
     secrets: inherit # zizmor: ignore[secrets-inherit]
     permissions:
-      contents: write # Needed to create the GitHub release for the published version
+      contents: read
       id-token: write # Needed for OIDC provenance when publishing to npm
     with:
-      version: ${{ needs.create-version.outputs.strictVersion }}
+      version: ${{ needs.version.outputs.version }}
+      distTag: ${{ needs.version.outputs.distTag }}
+      commitVersion: false
       environment: npmjs:@platform-mesh/portal-server-lib
+
+  github-release:
+    needs: [version, publish]
+    uses: platform-mesh/.github/.github/workflows/job-github-release.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
+    permissions:
+      contents: write # Needed to create the GitHub release
+    with:
+      tag: ${{ needs.version.outputs.tag }}
+      previousTag: ${{ needs.version.outputs.previousTag }}
+      prerelease: ${{ needs.version.outputs.prerelease == 'true' }}
+      latest: ${{ needs.version.outputs.latest == 'true' }}
