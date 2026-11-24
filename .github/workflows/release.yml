@@ -14,18 +14,18 @@ concurrency:
 
 jobs:
   version:
-    uses: platform-mesh/.github/.github/workflows/job-tag-version.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
+    uses: platform-mesh/.github/.github/workflows/job-tag-version.yml@3bfaea3b0850978a4cbca35206a41e54084fb3a1
     permissions:
       contents: read
 
   build:
     needs: [version]
-    uses: platform-mesh/.github/.github/workflows/job-node-test.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
+    uses: platform-mesh/.github/.github/workflows/job-node-test.yml@3bfaea3b0850978a4cbca35206a41e54084fb3a1
     secrets: inherit # zizmor: ignore[secrets-inherit]
 
   publish:
     needs: [version, build]
-    uses: platform-mesh/.github/.github/workflows/job-node-publish.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
+    uses: platform-mesh/.github/.github/workflows/job-node-publish.yml@3bfaea3b0850978a4cbca35206a41e54084fb3a1
     secrets: inherit # zizmor: ignore[secrets-inherit]
     permissions:
       contents: read
@@ -38,7 +38,7 @@ jobs:
 
   github-release:
     needs: [version, publish]
-    uses: platform-mesh/.github/.github/workflows/job-github-release.yml@6c3ad03c5a50f649d5d3f45aeb039793816b408d
+    uses: platform-mesh/.github/.github/workflows/job-github-release.yml@3bfaea3b0850978a4cbca35206a41e54084fb3a1
     permissions:
       contents: write # Needed to create the GitHub release
     with:
